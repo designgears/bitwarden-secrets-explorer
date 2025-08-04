@@ -2,8 +2,9 @@
   "name": "bitwarden-secrets-explorer",
   "displayName": "Bitwarden Secrets Explorer",
   "description": "Explore Bitwarden Secrets Manager projects and secrets.",
-  "version": "0.0.1",
-  "publisher": "BitwardenSecretsExplorer",
+  "version": "0.0.3",
+  "publisher": "DesignGears",
+  "icon": "icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/designgears/bitwarden-secrets-explorer.git"
