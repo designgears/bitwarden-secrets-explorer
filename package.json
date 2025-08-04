@@ -1,0 +1,207 @@
+{
+  "name": "bitwarden-secrets-explorer",
+  "displayName": "Bitwarden Secrets Explorer",
+  "description": "Explore Bitwarden Secrets Manager projects and secrets.",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/designgears/bitwarden-secrets-explorer.git"
+  },
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onFileSystem:bitwarden",
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "bitwarden-explorer",
+          "title": "Bitwarden Secrets",
+          "icon": "$(lock)"
+        }
+      ]
+    },
+    "views": {
+      "bitwarden-explorer": [
+        {
+          "id": "bitwardenSecretsExplorer",
+          "name": "Bitwarden Secrets",
+          "icon": "$(key)"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "bitwardenSecretsExplorer.refreshEntry",
+          "when": "view == bitwardenSecretsExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "bitwardenSecretsExplorer.createProject",
+          "when": "view == bitwardenSecretsExplorer",
+          "group": "navigation"
+        }
+      ],
+      "editor/title": [],
+      "view/item/context": [
+        {
+          "command": "bitwardenSecretsExplorer.createSecret",
+          "when": "view == bitwardenSecretsExplorer && viewItem == project",
+          "group": "inline"
+        },
+
+        {
+          "command": "bitwardenSecretsExplorer.copySecret",
+          "when": "view == bitwardenSecretsExplorer && viewItem == secret",
+          "group": "1_actions"
+        },
+        {
+          "command": "bitwardenSecretsExplorer.editSecret",
+          "when": "view == bitwardenSecretsExplorer && viewItem == secret",
+          "group": "1_actions"
+        },
+        {
+          "command": "bitwardenSecretsExplorer.deleteSecret",
+          "when": "view == bitwardenSecretsExplorer && viewItem == secret",
+          "group": "2_danger"
+        },
+        {
+          "command": "bitwardenSecretsExplorer.createSecret",
+          "when": "view == bitwardenSecretsExplorer && viewItem == project",
+          "group": "1_create"
+        },
+        {
+          "command": "bitwardenSecretsExplorer.exportProjectSecrets",
+          "when": "view == bitwardenSecretsExplorer && viewItem == project",
+          "group": "2_export"
+        },
+        {
+          "command": "bitwardenSecretsExplorer.loadProjectSecretsToEnv",
+          "when": "view == bitwardenSecretsExplorer && viewItem == project",
+          "group": "2_export"
+        },
+        {
+          "command": "bitwardenSecretsExplorer.editProject",
+          "when": "view == bitwardenSecretsExplorer && viewItem == project",
+          "group": "3_manage@1"
+        },
+        {
+          "command": "bitwardenSecretsExplorer.deleteProject",
+          "when": "view == bitwardenSecretsExplorer && viewItem == project",
+          "group": "3_manage@2"
+        },
+        {
+          "command": "bitwardenSecretsExplorer.copyProjectId",
+          "when": "view == bitwardenSecretsExplorer && viewItem == project",
+          "group": "3_manage@3"
+        },
+        {
+          "command": "bitwardenSecretsExplorer.loadSecretToEnv",
+          "when": "view == bitwardenSecretsExplorer && viewItem == secret",
+          "group": "1_actions"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "bitwardenSecretsExplorer.setAccessToken",
+        "title": "Bitwarden: Set Access Token"
+      },
+      {
+        "command": "bitwardenSecretsExplorer.setOrganizationId",
+        "title": "Bitwarden: Set Organization ID"
+      },
+     
+      {
+        "command": "bitwardenSecretsExplorer.refreshEntry",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "bitwardenSecretsExplorer.editSecret",
+        "title": "Edit Secret",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "bitwardenSecretsExplorer.createSecret",
+        "title": "Create New Secret",
+        "icon": "$(add)"
+      },
+      {
+        "command": "bitwardenSecretsExplorer.deleteSecret",
+        "title": "Delete Secret",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "bitwardenSecretsExplorer.copySecret",
+        "title": "Copy to Clipboard",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "bitwardenSecretsExplorer.copyProjectId",
+        "title": "Copy Project ID",
+        "icon": "$(symbol-key)"
+      },
+      {
+        "command": "bitwardenSecretsExplorer.exportProjectSecrets",
+        "title": "Save Secrets to File",
+        "icon": "$(export)"
+      },
+      {
+        "command": "bitwardenSecretsExplorer.loadProjectSecretsToEnv",
+        "title": "Export Secrets to Env",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "bitwardenSecretsExplorer.loadSecretToEnv",
+        "title": "Export Secret to Env",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "bitwardenSecretsExplorer.createProject",
+        "title": "Create New Project",
+        "icon": "$(add)"
+      },
+      {
+        "command": "bitwardenSecretsExplorer.editProject",
+        "title": "Edit Project",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "bitwardenSecretsExplorer.deleteProject",
+        "title": "Delete Project",
+        "icon": "$(trash)"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^24.1.0",
+    "@types/vscode": "^1.100.0",
+    "@typescript-eslint/eslint-plugin": "^8.38.0",
+    "@typescript-eslint/parser": "^8.38.0",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.32.0",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@bitwarden/sdk-napi": "^1.0.0"
+  }
+}

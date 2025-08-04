@@ -1,0 +1,66 @@
+/* VSCode theme variables */
+body {
+	color: var(--vscode-foreground);
+	background-color: var(--vscode-editor-background);
+	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-font-size);
+	font-weight: var(--vscode-font-weight);
+}
+
+button {
+	color: var(--vscode-button-foreground);
+	background-color: var(--vscode-button-background);
+	border: 1px solid var(--vscode-button-border);
+	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-font-size);
+}
+
+button:hover {
+	background-color: var(--vscode-button-hoverBackground);
+}
+
+button:focus {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: 2px;
+}
+
+input, textarea {
+	color: var(--vscode-input-foreground);
+	background-color: var(--vscode-input-background);
+	border: 1px solid var(--vscode-input-border);
+	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-font-size);
+}
+
+input:focus, textarea:focus {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+	border-color: var(--vscode-focusBorder);
+}
+
+input::placeholder, textarea::placeholder {
+	color: var(--vscode-input-placeholderForeground);
+}
+
+label {
+	color: var(--vscode-foreground);
+	font-weight: 600;
+}
+
+.field-help {
+	color: var(--vscode-descriptionForeground);
+}
+
+.error {
+	color: var(--vscode-errorForeground);
+	background-color: var(--vscode-inputValidation-errorBackground);
+	border-color: var(--vscode-inputValidation-errorBorder);
+}
+
+.success {
+	color: var(--vscode-terminal-ansiGreen);
+}
+
+.warning {
+	color: var(--vscode-terminal-ansiYellow);
+}
