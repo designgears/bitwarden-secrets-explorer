@@ -138,11 +138,23 @@ function getSecretEditorScript(): string {
       }
     });
     
-    // Auto-focus first input
+    // Auto-focus first input and add event listeners
     document.addEventListener('DOMContentLoaded', () => {
       const firstInput = document.getElementById('key');
       if (firstInput) {
         firstInput.focus();
+      }
+      
+      // Add event listeners for buttons
+      const saveBtn = document.getElementById('saveBtn');
+      const cancelBtn = document.getElementById('cancelBtn');
+      
+      if (saveBtn) {
+        saveBtn.addEventListener('click', saveSecret);
+      }
+      
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', cancel);
       }
     });
   `;
@@ -186,8 +198,8 @@ export function getSecretEditorHtml(secret: any, projects: any[], isNewSecret: b
           </div>
           
           <div class="button-group">
-            <button class="primary-button" onclick="saveSecret()">${isNewSecret ? 'Create' : 'Save'}</button>
-            <button class="secondary-button" onclick="cancel()">Cancel</button>
+            <button class="primary-button" id="saveBtn">${isNewSecret ? 'Create' : 'Save'}</button>
+            <button class="secondary-button" id="cancelBtn">Cancel</button>
           </div>
         </div>
       </div>

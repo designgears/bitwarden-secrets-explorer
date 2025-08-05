@@ -66,3 +66,21 @@ export function getEnvCheckInstructions(): string {
       return 'Check with: $env:VARIABLE_NAME';
   }
 }
+
+/**
+ * Gets the appropriate clear command for the detected terminal
+ * @returns The clear command string for the current terminal type
+ */
+export function getClearCommand(): string {
+  const terminalType = detectTerminalType();
+  
+  switch (terminalType) {
+    case 'wsl':
+    case 'unix':
+      return 'clear';
+    case 'cmd':
+      return 'cls';
+    case 'powershell':
+      return 'Clear-Host';
+  }
+}

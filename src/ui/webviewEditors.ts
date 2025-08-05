@@ -3,6 +3,11 @@ import * as path from 'path';
 import { BitwardenSecretsProvider, BitwardenSecretItem } from './treeProvider';
 import { getLoadingHtml, getErrorHtml, getSecretEditorHtml } from './htmlTemplates';
 
+// Track open secret editor panels to prevent duplicates
+const openSecretPanels = new Map<string, vscode.WebviewPanel>();
+// Track open new secret editor panels by project ID to prevent duplicates
+const openNewSecretPanels = new Map<string, vscode.WebviewPanel>();
+
 /**
  * Replace CSS URI placeholders with actual webview URIs
  */
@@ -24,6 +29,14 @@ export async function openSecretEditor(
   provider: BitwardenSecretsProvider, 
   item: BitwardenSecretItem
 ): Promise<void> {
+  // Check if a panel for this secret is already open
+  const existingPanel = openSecretPanels.get(item.id!);
+  if (existingPanel) {
+    // Focus the existing panel instead of creating a new one
+    existingPanel.reveal(vscode.ViewColumn.One);
+    return;
+  }
+
   // Create webview panel immediately with loading state
   const panel = vscode.window.createWebviewPanel(
     'secretEditor',
@@ -36,6 +49,14 @@ export async function openSecretEditor(
       portMapping: []
     }
   );
+
+  // Track this panel
+  openSecretPanels.set(item.id!, panel);
+
+  // Clean up when panel is disposed
+  panel.onDidDispose(() => {
+    openSecretPanels.delete(item.id!);
+  });
 
   // Show loading state immediately
   panel.webview.html = replaceCssUris(getLoadingHtml('Loading secret...'), panel.webview, context);
@@ -99,6 +120,14 @@ export async function openNewSecretEditor(
   provider: BitwardenSecretsProvider, 
   projectId: string
 ): Promise<void> {
+  // Check if a new secret panel for this project is already open
+  const existingPanel = openNewSecretPanels.get(projectId);
+  if (existingPanel) {
+    // Focus the existing panel instead of creating a new one
+    existingPanel.reveal(vscode.ViewColumn.One);
+    return;
+  }
+
   // Create webview panel immediately with loading state
   const panel = vscode.window.createWebviewPanel(
     'newSecretEditor',
@@ -111,6 +140,14 @@ export async function openNewSecretEditor(
       portMapping: []
     }
   );
+
+  // Track this panel
+  openNewSecretPanels.set(projectId, panel);
+
+  // Clean up when panel is disposed
+  panel.onDidDispose(() => {
+    openNewSecretPanels.delete(projectId);
+  });
 
   // Show loading state immediately
   panel.webview.html = replaceCssUris(getLoadingHtml('Loading projects...'), panel.webview, context);

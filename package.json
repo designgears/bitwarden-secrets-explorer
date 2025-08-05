@@ -2,9 +2,9 @@
   "name": "bitwarden-secrets-explorer",
   "displayName": "Bitwarden Secrets Explorer",
   "description": "Explore Bitwarden Secrets Manager projects and secrets.",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "publisher": "DesignGears",
-  "icon": "icon.png",
+  "icon": "media/img/logo_128.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/designgears/bitwarden-secrets-explorer.git"
@@ -33,9 +33,17 @@
     "views": {
       "bitwarden-explorer": [
         {
+          "icon": "$(info)",
+          "id": "bitwardenWelcome",
+          "name": "Welcome",
+          "when": "!bitwarden.hasData",
+          "type": "webview"
+        },
+        {
           "id": "bitwardenSecretsExplorer",
           "name": "Bitwarden Secrets",
-          "icon": "$(key)"
+          "icon": "$(key)",
+          "when": "bitwarden.hasData"
         }
       ]
     },
@@ -43,12 +51,12 @@
       "view/title": [
         {
           "command": "bitwardenSecretsExplorer.refreshEntry",
-          "when": "view == bitwardenSecretsExplorer",
+          "when": "view == bitwardenSecretsExplorer && bitwarden.hasData",
           "group": "navigation"
         },
         {
           "command": "bitwardenSecretsExplorer.createProject",
-          "when": "view == bitwardenSecretsExplorer",
+          "when": "view == bitwardenSecretsExplorer && bitwarden.hasData",
           "group": "navigation"
         }
       ],
@@ -81,7 +89,17 @@
           "group": "1_create"
         },
         {
+          "command": "bitwardenSecretsExplorer.copyProjectSecrets",
+          "when": "view == bitwardenSecretsExplorer && viewItem == project",
+          "group": "2_export"
+        },
+        {
           "command": "bitwardenSecretsExplorer.exportProjectSecrets",
+          "when": "view == bitwardenSecretsExplorer && viewItem == project",
+          "group": "2_export"
+        },
+        {
+          "command": "bitwardenSecretsExplorer.importSecretsFromEnv",
           "when": "view == bitwardenSecretsExplorer && viewItem == project",
           "group": "2_export"
         },
@@ -121,6 +139,15 @@
         "command": "bitwardenSecretsExplorer.setOrganizationId",
         "title": "Bitwarden: Set Organization ID"
       },
+      {
+        "command": "bitwardenSecretsExplorer.clearTokens",
+        "title": "Bitwarden: Clear Tokens"
+      },
+      {
+        "command": "bitwardenSecretsExplorer.checkStatus",
+        "title": "Check Status",
+        "icon": "$(refresh)"
+      },
      
       {
         "command": "bitwardenSecretsExplorer.refreshEntry",
@@ -153,18 +180,28 @@
         "icon": "$(symbol-key)"
       },
       {
+        "command": "bitwardenSecretsExplorer.copyProjectSecrets",
+        "title": "Copy All Secrets to Clipboard",
+        "icon": "$(copy)"
+      },
+      {
         "command": "bitwardenSecretsExplorer.exportProjectSecrets",
-        "title": "Save Secrets to File",
+        "title": "Export Secrets to File",
         "icon": "$(export)"
       },
       {
+        "command": "bitwardenSecretsExplorer.importSecretsFromEnv",
+        "title": "Import Secrets from .env File",
+        "icon": "$(import)"
+      },
+      {
         "command": "bitwardenSecretsExplorer.loadProjectSecretsToEnv",
-        "title": "Export Secrets to Env",
+        "title": "Export Secrets to Terminal",
         "icon": "$(terminal)"
       },
       {
         "command": "bitwardenSecretsExplorer.loadSecretToEnv",
-        "title": "Export Secret to Env",
+        "title": "Export Secret to Terminal",
         "icon": "$(terminal)"
       },
       {

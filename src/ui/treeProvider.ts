@@ -87,14 +87,16 @@ export class BitwardenSecretsProvider implements vscode.TreeDataProvider<Bitward
    * Create a tree item indicating no token is set
    */
   private createNoTokenItem(): BitwardenSecretItem[] {
-    return [
-      new BitwardenSecretItem(
-        'No Access Token', 
-        'Please set your Bitwarden Access Token', 
-        vscode.TreeItemCollapsibleState.None, 
-        'project'
-      )
-    ];
+    const placeholder = new BitwardenSecretItem(
+      'No Access Token', 
+      'Please set your Bitwarden Access Token', 
+      vscode.TreeItemCollapsibleState.None, 
+      'project'
+    );
+    // Make placeholder non-clickable
+    placeholder.contextValue = 'placeholder';
+    placeholder.command = undefined;
+    return [placeholder];
   }
 
   /**
@@ -116,14 +118,18 @@ export class BitwardenSecretsProvider implements vscode.TreeDataProvider<Bitward
         'Please check your access token. ' +
         'Error: ' + error.message
       );
+      const errorItem = new BitwardenSecretItem(
+        'Authentication Failed',
+        'Check your access token',
+        vscode.TreeItemCollapsibleState.None,
+        'project'
+      );
+      // Make error item non-clickable
+      errorItem.contextValue = 'placeholder';
+      errorItem.command = undefined;
       return {
         success: false,
-        errorItem: new BitwardenSecretItem(
-          'Authentication Failed',
-          'Check your access token',
-          vscode.TreeItemCollapsibleState.None,
-          'project'
-        )
+        errorItem: errorItem
       };
     }
   }
@@ -137,7 +143,8 @@ export class BitwardenSecretsProvider implements vscode.TreeDataProvider<Bitward
       if (element.type === 'project' && element.id) {
         return this.getSecretsForProject(element.id, accessToken);
       }
-      return []; // No children for secrets or unknown types
+      // No children for secrets or unknown types - return empty array as secrets don't have children
+      return [];
     } else {
       // No element means root, so get all projects
       return this.getProjects(accessToken);
@@ -165,7 +172,7 @@ export class BitwardenSecretsProvider implements vscode.TreeDataProvider<Bitward
         
         progress.report({ increment: 100, message: 'Complete' });
         
-        return projects.map((proj) =>
+        const projectItems = projects.map((proj) =>
           new BitwardenSecretItem(
             proj.name,
             undefined, // Hide project ID from display
@@ -174,16 +181,34 @@ export class BitwardenSecretsProvider implements vscode.TreeDataProvider<Bitward
             proj.id
           )
         );
-      } catch (error: any) {
-        vscode.window.showErrorMessage(`Failed to load projects: ${error.message}`);
-        return [
-          new BitwardenSecretItem(
-            'Error Loading Projects',
-            error.message,
+        
+        // Add placeholder if no projects exist
+        if (projectItems.length === 0) {
+          const placeholder = new BitwardenSecretItem(
+            'No Projects Found',
+            'Create a project in Bitwarden to get started',
             vscode.TreeItemCollapsibleState.None,
             'project'
-          )
-        ];
+          );
+          // Make placeholder non-clickable
+          placeholder.contextValue = 'placeholder';
+          placeholder.command = undefined;
+          return [placeholder];
+        }
+        
+        return projectItems;
+      } catch (error: any) {
+        vscode.window.showErrorMessage(`Failed to load projects: ${error.message}`);
+        const errorItem = new BitwardenSecretItem(
+          'Error Loading Projects',
+          error.message,
+          vscode.TreeItemCollapsibleState.None,
+          'project'
+        );
+        // Make error item non-clickable
+        errorItem.contextValue = 'placeholder';
+        errorItem.command = undefined;
+        return [errorItem];
       }
     });
   }
@@ -210,7 +235,7 @@ export class BitwardenSecretsProvider implements vscode.TreeDataProvider<Bitward
         
         progress.report({ increment: 100, message: 'Complete' });
         
-        return secrets.map((secret) =>
+        const secretItems = secrets.map((secret) =>
           new BitwardenSecretItem(
             secret.key,
             undefined, // Hide secret ID from description
@@ -220,16 +245,34 @@ export class BitwardenSecretsProvider implements vscode.TreeDataProvider<Bitward
             projectId // Pass project ID for context menu operations
           )
         );
-      } catch (error: any) {
-        vscode.window.showErrorMessage(`Failed to load secrets for project ${projectId}: ${error.message}`);
-        return [
-          new BitwardenSecretItem(
-            'Error Loading Secrets',
-            error.message,
+        
+        // Add placeholder if no secrets exist in this project
+        if (secretItems.length === 0) {
+          const placeholder = new BitwardenSecretItem(
+            'No Secrets Found',
+            'Create a secret in this project to get started',
             vscode.TreeItemCollapsibleState.None,
             'secret'
-          )
-        ];
+          );
+          // Make placeholder non-clickable
+          placeholder.contextValue = 'placeholder';
+          placeholder.command = undefined;
+          return [placeholder];
+        }
+        
+        return secretItems;
+      } catch (error: any) {
+        vscode.window.showErrorMessage(`Failed to load secrets for project ${projectId}: ${error.message}`);
+        const errorItem = new BitwardenSecretItem(
+          'Error Loading Secrets',
+          error.message,
+          vscode.TreeItemCollapsibleState.None,
+          'secret'
+        );
+        // Make error item non-clickable
+        errorItem.contextValue = 'placeholder';
+        errorItem.command = undefined;
+        return [errorItem];
       }
     });
   }

@@ -15,39 +15,6 @@ export class BitwardenSdkService {
     };
     
     this.client = new BitwardenClient(settings, LogLevel.Info);
-    
-
-  }
-
-  private isUuid(v: string | null | undefined): v is string {
-    if (!v) {
-      return false;
-    }
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(v);
-  }
-
-
-  private extractOrganizationIdFromToken(accessToken: string): string | null {
-    try {
-      const parts = accessToken.split('.');
-      if (parts.length >= 3) {
-        const potentialOrgId = parts[1];
-        if (this.isUuid(potentialOrgId)) {
-          return potentialOrgId;
-        }
-      }
-      if (parts.length >= 2) {
-        const potentialOrgId = parts[0];
-        if (this.isUuid(potentialOrgId)) {
-          return potentialOrgId;
-        }
-      }
-      return null;
-    } catch (error) {
-      console.error('Error extracting organization ID from token:', error);
-      return null;
-    }
   }
 
   private async runCommand(command: any): Promise<any> {
@@ -55,17 +22,19 @@ export class BitwardenSdkService {
       throw new Error('SDK client not initialized');
     }
     
-    const response = await this.client.client.runCommand(JSON.stringify(command));
-    const parsed = JSON.parse(response);
-    
-    if (!parsed.success) {
-      throw new Error(`Server returned error: ${parsed.errorMessage}`);
+    try {
+      const response = await this.client.client.runCommand(JSON.stringify(command));
+      const parsed = JSON.parse(response);
+      
+      if (!parsed.success) {
+        throw new Error(`Server returned error: ${parsed.errorMessage}`);
+      }
+      
+      return parsed;
+    } catch (error) {
+      throw error;
     }
-    
-    return parsed;
   }
-
-
 
   async authenticate(accessToken: string): Promise<void> {
     if (!this.client) {
@@ -77,8 +46,7 @@ export class BitwardenSdkService {
       this.isAuthenticated = true;
     } catch (error) {
       this.isAuthenticated = false;
-      const hint = ' Verify the access token belongs to an organization with Secrets Manager and that the token has the correct scope.';
-      throw new Error(`Authentication failed: ${error instanceof Error ? error.message : String(error)}.${hint}`);
+      throw new Error(`Authentication failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -98,13 +66,8 @@ export class BitwardenSdkService {
   }
 
   setOrganizationId(orgId: string): void {
-    if (this.isUuid(orgId)) {
-      this.organizationId = orgId;
-    } else {
-      throw new Error('Invalid organization ID format. Must be a valid UUID.');
-    }
+    this.organizationId = orgId.trim();
   }
-
 
   getOrganizationId(): string | null {
     return this.organizationId;
@@ -117,7 +80,7 @@ export class BitwardenSdkService {
 
     const orgId = this.organizationId;
     if (!orgId) {
-      throw new Error('Organization ID not available. Please ensure you are using a valid organization access token.');
+      throw new Error('Organization ID not set');
     }
 
     try {
@@ -148,9 +111,9 @@ export class BitwardenSdkService {
     if (!this.isClientAuthenticated()) {
       throw new Error('Client not authenticated');
     }
-
-    if (!this.isUuid(this.organizationId)) {
-      throw new Error('No valid organization ID available. Please authenticate with an organization access token.');
+    if (!this.organizationId) {
+      console.error('[BitwardenSdkService] Organization ID not set for listSecrets');
+      throw new Error('Organization ID not set');
     }
 
     try {
@@ -194,7 +157,7 @@ export class BitwardenSdkService {
     }
 
     if (!this.organizationId) {
-      throw new Error('Organization ID not available. Please ensure you are using a valid organization access token.');
+      throw new Error('Organization ID not set');
     }
 
     try {
@@ -226,8 +189,8 @@ export class BitwardenSdkService {
       throw new Error('Client not authenticated');
     }
 
-    if (!this.isUuid(this.organizationId)) {
-      throw new Error('No valid organization ID available. Please authenticate with an organization access token.');
+    if (!this.organizationId) {
+      throw new Error('Organization ID not set');
     }
 
     try {
@@ -262,7 +225,7 @@ export class BitwardenSdkService {
     }
 
     if (!this.organizationId) {
-      throw new Error('Organization ID not available. Please ensure you are using a valid organization access token.');
+      throw new Error('Organization ID not set');
     }
 
     if (!secret?.id) {
@@ -295,7 +258,7 @@ export class BitwardenSdkService {
     }
 
     if (!this.organizationId) {
-      throw new Error('Organization ID not available. Please ensure you are using a valid organization access token.');
+      throw new Error('Organization ID not set');
     }
 
     if (!secretId) {
@@ -322,8 +285,8 @@ export class BitwardenSdkService {
       throw new Error('Client not authenticated');
     }
 
-    if (!this.isUuid(this.organizationId)) {
-      throw new Error('No valid organization ID available. Please authenticate with an organization access token.');
+    if (!this.organizationId) {
+      throw new Error('Organization ID not set');
     }
 
     if (!name || name.trim().length === 0) {
@@ -353,8 +316,8 @@ export class BitwardenSdkService {
       throw new Error('Client not authenticated');
     }
 
-    if (!this.isUuid(this.organizationId)) {
-      throw new Error('No valid organization ID available. Please authenticate with an organization access token.');
+    if (!this.organizationId) {
+      throw new Error('Organization ID not set');
     }
 
     if (!projectId) {
@@ -389,7 +352,7 @@ export class BitwardenSdkService {
     }
 
     if (!this.organizationId) {
-      throw new Error('Organization ID not available. Please ensure you are using a valid organization access token.');
+      throw new Error('Organization ID not set');
     }
 
     if (!projectId) {
