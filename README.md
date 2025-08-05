@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="media/img/logo_banner_lg.png" alt="Bitwarden Secrets Explorer" width="600">
+</div>
+
 # Bitwarden Secrets Explorer
 
 A comprehensive VS Code extension for managing Bitwarden Secrets Manager projects and secrets directly in your IDE. Streamline your development workflow with secure secret management, environment variable integration, and seamless .env file operations.
