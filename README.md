@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="media/img/logo_banner_lg.png" alt="Bitwarden Secrets Explorer" width="600">
+  <img src="https://raw.githubusercontent.com/designgears/bitwarden-secrets-explorer/refs/heads/master/media/img/logo_banner_sm.png" alt="Bitwarden Secrets Explorer" width="600">
 </div>
 
 # Bitwarden Secrets Explorer
