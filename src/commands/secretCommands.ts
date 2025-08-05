@@ -245,14 +245,15 @@ export async function importSecretsFromEnvCommand(
       
       const envFiles: vscode.Uri[] = [];
       
-      // Search for .env* files in all workspace folders
+      // Search for .env* files only in the top directory of workspace folders
       for (const folder of workspaceFolders) {
         try {
-          const files = await vscode.workspace.findFiles(
-            new vscode.RelativePattern(folder, '.env*'),
-            '**/node_modules/**'
-          );
-          envFiles.push(...files);
+          const entries = await vscode.workspace.fs.readDirectory(folder.uri);
+          for (const [name, type] of entries) {
+            if (type === vscode.FileType.File && name.startsWith('.env')) {
+              envFiles.push(vscode.Uri.joinPath(folder.uri, name));
+            }
+          }
         } catch (error) {
           // Continue if search fails for this folder
         }
@@ -414,27 +415,46 @@ export async function exportProjectSecretsCommand(
 ): Promise<void> {
   if (item.type === 'project' && item.id) {
     try {
-      const secrets = await provider.getSecretsForProject(item.id, '');
-      
-      if (secrets.length === 0) {
-        vscode.window.showInformationMessage('No secrets found in this project');
-        return;
+      // Show file selection immediately without fetching secrets first
+      const targetFile = await selectEnvFileForExport();
+      if (!targetFile) {
+        return; // User cancelled file selection
       }
       
-      // Collect secret values
-      const secretData: { [key: string]: string } = {};
-      
-      for (const secret of secrets) {
-        if (secret.type === 'secret' && secret.id) {
-          const secretValue = await provider.getSecretValue(secret.id, '');
-          if (secretValue) {
-            secretData[secret.label] = secretValue;
+      // Show progress while fetching secrets
+      await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: 'Exporting secrets...',
+        cancellable: false
+      }, async (progress) => {
+        progress.report({ message: 'Fetching project secrets...' });
+        
+        const secrets = await provider.getSecretsForProject(item.id!, '');
+        
+        if (secrets.length === 0) {
+          vscode.window.showInformationMessage('No secrets found in this project');
+          return;
+        }
+        
+        progress.report({ message: 'Collecting secret values...' });
+        
+        // Collect secret values
+        const secretData: { [key: string]: string } = {};
+        
+        for (const secret of secrets) {
+          if (secret.type === 'secret' && secret.id) {
+            const secretValue = await provider.getSecretValue(secret.id, '');
+            if (secretValue) {
+              secretData[secret.label] = secretValue;
+            }
           }
         }
-      }
-      
-      // Export to .env file with enhanced functionality
-      await handleEnvFileExport(secretData);
+        
+        progress.report({ message: 'Writing to file...' });
+        
+        // Export to the selected file
+        await writeSecretsToFile(targetFile, secretData);
+      });
       
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to export secrets: ${error}`);
@@ -443,173 +463,265 @@ export async function exportProjectSecretsCommand(
 }
 
 /**
- * Handle .env file export with conflict resolution and file creation
+ * Select target file for export without fetching secrets
  */
-async function handleEnvFileExport(
-  secretData: { [key: string]: string }
-): Promise<void> {
-  try {
-    // Find existing .env files in workspace
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders || workspaceFolders.length === 0) {
-      vscode.window.showErrorMessage('No workspace folder found');
-      return;
-    }
-    
-    const envFiles: vscode.Uri[] = [];
-    
-    // Search for .env* files in all workspace folders
-    for (const folder of workspaceFolders) {
-      try {
-        const files = await vscode.workspace.findFiles(
-          new vscode.RelativePattern(folder, '.env*'),
-          '**/node_modules/**'
-        );
-        envFiles.push(...files);
-      } catch (error) {
-        // Continue if search fails for this folder
+async function selectEnvFileForExport(): Promise<vscode.Uri | null> {
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (!workspaceFolders || workspaceFolders.length === 0) {
+    vscode.window.showErrorMessage('No workspace folder found');
+    return null;
+  }
+
+  // Find existing .env files in the top directory
+  const envFiles: vscode.Uri[] = [];
+  
+  for (const folder of workspaceFolders) {
+    try {
+      const entries = await vscode.workspace.fs.readDirectory(folder.uri);
+      for (const [name, type] of entries) {
+        if (type === vscode.FileType.File && name.startsWith('.env')) {
+          envFiles.push(vscode.Uri.joinPath(folder.uri, name));
+        }
       }
+    } catch (error) {
+      // Continue if search fails for this folder
     }
+  }
+  
+  interface FileOption {
+    label: string;
+    description: string;
+    uri?: vscode.Uri;
+    filename?: string;
+  }
+  
+  if (envFiles.length > 0) {
+    // Show existing .env files and option to create new
+    const fileOptions: FileOption[] = envFiles.map(file => ({
+      label: vscode.workspace.asRelativePath(file),
+      description: 'Update existing file',
+      uri: file
+    }));
     
-    let targetFile: vscode.Uri;
-    let existingContent: { [key: string]: string } = {};
+    // Check which files already exist to avoid offering them as creation options
+    const existingFileNames = new Set(envFiles.map(file => file.path.split('/').pop()));
     
-    if (envFiles.length > 0) {
-      // Show existing .env files and option to create new
-      const fileOptions = envFiles.map(file => ({
-        label: vscode.workspace.asRelativePath(file),
-        description: 'Update existing file',
-        uri: file
-      }));
-      
+    if (!existingFileNames.has('.env')) {
       fileOptions.push({
         label: 'Create new .env file',
         description: 'Create a new .env file in workspace root',
-        uri: undefined as any
+        filename: '.env'
       });
-      
-      const selectedOption = await vscode.window.showQuickPick(fileOptions, {
-        placeHolder: 'Select .env file to update or create new one'
+    }
+    
+    if (!existingFileNames.has('.env.local')) {
+      fileOptions.push({
+        label: 'Create new .env.local file',
+        description: 'Create a new .env.local file in workspace root',
+        filename: '.env.local'
       });
-      
-      if (!selectedOption) {
-        return;
-      }
-      
-      if (selectedOption.uri) {
-        // User selected existing file
-        targetFile = selectedOption.uri;
-        
-        try {
-          const fileContent = await vscode.workspace.fs.readFile(targetFile);
-          const contentString = Buffer.from(fileContent).toString('utf8');
-          existingContent = parseEnvFile(contentString);
-        } catch (error) {
-          // File might not exist or be readable, continue with empty content
-        }
-      } else {
-        // User wants to create new file
-        targetFile = vscode.Uri.joinPath(workspaceFolders[0].uri, '.env');
-      }
+    }
+    
+    fileOptions.push({
+      label: 'Create custom .env file',
+      description: 'Create a new .env file with custom name',
+      filename: 'custom'
+    });
+    
+    const selectedOption = await vscode.window.showQuickPick(fileOptions, {
+      placeHolder: 'Select .env file to update or create new one'
+    });
+    
+    if (!selectedOption) {
+      return null;
+    }
+    
+    if (selectedOption.uri) {
+      return selectedOption.uri;
     } else {
-      // No .env files found, offer to create one
-      const createNew = await vscode.window.showInformationMessage(
-        'No .env files found in workspace. Create a new .env file?',
-        'Yes',
-        'No'
-      );
-      
-      if (createNew !== 'Yes') {
-        return;
-      }
-      
-      targetFile = vscode.Uri.joinPath(workspaceFolders[0].uri, '.env');
-    }
-    
-    // Check for conflicts and handle them
-    const conflicts: string[] = [];
-    const newSecrets: string[] = [];
-    
-    for (const key of Object.keys(secretData)) {
-      if (existingContent.hasOwnProperty(key)) {
-        conflicts.push(key);
-      } else {
-        newSecrets.push(key);
-      }
-    }
-    
-    let finalContent = { ...existingContent };
-    
-    if (conflicts.length > 0) {
-      // Handle conflicts
-      const conflictAction = await vscode.window.showQuickPick(
-        [
-          { label: 'Overwrite all conflicts', description: `Replace ${conflicts.length} existing secrets` },
-          { label: 'Choose for each conflict', description: 'Decide individually for each conflict' },
-          { label: 'Skip conflicts', description: 'Only add new secrets, keep existing ones' }
-        ],
-        { placeHolder: 'How to handle existing secrets?' }
-      );
-      
-      if (!conflictAction) {
-        return;
-      }
-      
-      switch (conflictAction.label) {
-        case 'Overwrite all conflicts':
-          // Overwrite all conflicts
-          for (const key of conflicts) {
-            finalContent[key] = secretData[key];
-          }
-          break;
-          
-        case 'Choose for each conflict':
-          // Ask for each conflict individually
-          for (const key of conflicts) {
-            const overwrite = await vscode.window.showQuickPick(
-              [
-                { label: 'Yes', description: `Overwrite ${key}` },
-                { label: 'No', description: `Keep existing ${key}` }
-              ],
-              { placeHolder: `Overwrite existing secret '${key}'?` }
-            );
-            
-            if (overwrite?.label === 'Yes') {
-              finalContent[key] = secretData[key];
+      // User wants to create new file
+      if (selectedOption.filename === 'custom') {
+        const customName = await vscode.window.showInputBox({
+          prompt: 'Enter the filename for your .env file',
+          placeHolder: '.env.development',
+          validateInput: async (value) => {
+            if (!value) {
+              return 'Filename cannot be empty';
             }
+            if (!value.startsWith('.env')) {
+              return 'Filename must start with ".env"';
+            }
+            // Check if file already exists
+            try {
+              const testFile = vscode.Uri.joinPath(workspaceFolders[0].uri, value);
+              await vscode.workspace.fs.stat(testFile);
+              return 'File already exists. Please choose a different name.';
+            } catch {
+              // File doesn't exist, which is what we want
+            }
+            return null;
           }
-          break;
-          
-        case 'Skip conflicts':
-          // Don't overwrite any conflicts
-          break;
+        });
+        
+        if (!customName) {
+          return null;
+        }
+        
+        return vscode.Uri.joinPath(workspaceFolders[0].uri, customName);
+      } else {
+        return vscode.Uri.joinPath(workspaceFolders[0].uri, selectedOption.filename!);
       }
     }
+  } else {
+    // No .env files found, offer to create one
+    const fileChoice = await vscode.window.showQuickPick([
+      {
+        label: 'Create .env file',
+        description: 'Create a new .env file in workspace root',
+        filename: '.env'
+      },
+      {
+        label: 'Create .env.local file',
+        description: 'Create a new .env.local file in workspace root',
+        filename: '.env.local'
+      },
+      {
+        label: 'Create custom .env file',
+        description: 'Create a new .env file with custom name',
+        filename: 'custom'
+      }
+    ], {
+      placeHolder: 'No .env files found. Choose file type to create:'
+    });
     
-    // Add new secrets (non-conflicting)
-    for (const key of newSecrets) {
-      finalContent[key] = secretData[key];
+    if (!fileChoice) {
+      return null;
     }
     
-    // Write the final content
-    const finalEnvContent = formatEnvFile(finalContent);
-    await vscode.workspace.fs.writeFile(targetFile, Buffer.from(finalEnvContent, 'utf8'));
-    
-    const relativePath = vscode.workspace.asRelativePath(targetFile);
-    const addedCount = newSecrets.length;
-    const updatedCount = conflicts.filter(key => finalContent[key] === secretData[key]).length;
-    
-    let message = `Secrets exported to ${relativePath}`;
-    if (addedCount > 0) {
-      message += ` (${addedCount} new)`;
+    if (fileChoice.filename === 'custom') {
+      const customName = await vscode.window.showInputBox({
+        prompt: 'Enter the filename for your .env file',
+        placeHolder: '.env.development',
+        validateInput: async (value) => {
+          if (!value) {
+            return 'Filename cannot be empty';
+          }
+          if (!value.startsWith('.env')) {
+            return 'Filename must start with ".env"';
+          }
+          // Check if file already exists
+          try {
+            const testFile = vscode.Uri.joinPath(workspaceFolders[0].uri, value);
+            await vscode.workspace.fs.stat(testFile);
+            return 'File already exists. Please choose a different name.';
+          } catch {
+            // File doesn't exist, which is what we want
+          }
+          return null;
+        }
+      });
+      
+      if (!customName) {
+        return null;
+      }
+      
+      return vscode.Uri.joinPath(workspaceFolders[0].uri, customName);
+    } else {
+      return vscode.Uri.joinPath(workspaceFolders[0].uri, fileChoice.filename!);
     }
-    if (updatedCount > 0) {
-      message += ` (${updatedCount} updated)`;
-    }
-    
-    vscode.window.showInformationMessage(message);
-    
-  } catch (error) {
-    vscode.window.showErrorMessage(`Failed to export to .env file: ${error}`);
   }
+}
+
+/**
+ * Write secrets to the selected file with conflict resolution
+ */
+async function writeSecretsToFile(
+  targetFile: vscode.Uri,
+  secretData: { [key: string]: string }
+): Promise<void> {
+  let existingContent: { [key: string]: string } = {};
+  
+  try {
+    const fileContent = await vscode.workspace.fs.readFile(targetFile);
+    const contentString = Buffer.from(fileContent).toString('utf8');
+    existingContent = parseEnvFile(contentString);
+  } catch (error) {
+    // File might not exist or be readable, continue with empty content
+  }
+  
+  // Check for conflicts and handle them
+  const conflicts: string[] = [];
+  const newSecrets: string[] = [];
+  
+  for (const key of Object.keys(secretData)) {
+    if (existingContent.hasOwnProperty(key)) {
+      conflicts.push(key);
+    } else {
+      newSecrets.push(key);
+    }
+  }
+  
+  let finalContent = { ...existingContent };
+  
+  if (conflicts.length > 0) {
+    // Handle conflicts
+    const conflictAction = await vscode.window.showQuickPick(
+      [
+        { label: 'Overwrite all conflicts', description: `Replace ${conflicts.length} existing secrets` },
+        { label: 'Choose for each conflict', description: 'Decide individually for each conflict' },
+        { label: 'Skip conflicts', description: 'Only add new secrets, keep existing ones' }
+      ],
+      { placeHolder: 'How to handle existing secrets?' }
+    );
+    
+    if (!conflictAction) {
+      return;
+    }
+    
+    if (conflictAction.label === 'Overwrite all conflicts') {
+      // Overwrite all conflicts
+      for (const key of conflicts) {
+        finalContent[key] = secretData[key];
+      }
+    } else if (conflictAction.label === 'Choose for each conflict') {
+      // Handle each conflict individually
+      for (const key of conflicts) {
+        const choice = await vscode.window.showQuickPick(
+          [
+            { label: 'Overwrite', description: `Replace existing value for ${key}` },
+            { label: 'Keep existing', description: `Keep current value for ${key}` }
+          ],
+          { placeHolder: `Conflict for "${key}": Choose action` }
+        );
+        
+        if (!choice) {
+          return; // User cancelled
+        }
+        
+        if (choice.label === 'Overwrite') {
+          finalContent[key] = secretData[key];
+        }
+        // If 'Keep existing', do nothing (keep current value)
+      }
+    }
+    // If 'Skip conflicts', do nothing for conflicts
+  }
+  
+  // Add new secrets
+  for (const key of newSecrets) {
+    finalContent[key] = secretData[key];
+  }
+  
+  // Write the final content to file
+  const envContent = formatEnvFile(finalContent);
+  await vscode.workspace.fs.writeFile(targetFile, Buffer.from(envContent, 'utf8'));
+  
+  const relativePath = vscode.workspace.asRelativePath(targetFile);
+  const totalSecrets = Object.keys(finalContent).length;
+  const addedSecrets = newSecrets.length;
+  const updatedSecrets = conflicts.filter(key => finalContent[key] === secretData[key]).length;
+  
+  vscode.window.showInformationMessage(
+    `Exported to ${relativePath}: ${addedSecrets} new, ${updatedSecrets} updated, ${totalSecrets} total secrets`
+  );
 }
