@@ -143,4 +143,4 @@ A comprehensive VS Code extension for managing Bitwarden Secrets Manager project
 
 ## 📄 License
 
-All Rights Reserved - see [LICENSE](LICENSE) file.
+All Rights Reserved - see [LICENSE](https://github.com/designgears/bitwarden-secrets-explorer?tab=License-1-ov-file) file.
