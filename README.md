@@ -51,31 +51,31 @@ A comprehensive VS Code extension for managing Bitwarden Secrets Manager project
   <table>
     <tr>
       <td align="center">
-        <img src="media/screenshots/onboard.png" alt="Onboarding" width="400"/>
+        <img src="https://raw.githubusercontent.com/designgears/bitwarden-secrets-explorer/refs/heads/master/media/screenshots/onboard.png" alt="Onboarding" width="400"/>
         <br/>
         <sub><b>Getting Started</b></sub>
       </td>
       <td align="center">
-        <img src="media/screenshots/projects.png" alt="Projects View" width="400"/>
+        <img src="https://raw.githubusercontent.com/designgears/bitwarden-secrets-explorer/refs/heads/master/media/screenshots/projects.png" alt="Projects View" width="400"/>
         <br/>
         <sub><b>Projects Management</b></sub>
       </td>
     </tr>
     <tr>
       <td align="center">
-        <img src="media/screenshots/projects_options.png" alt="Project Options" width="400"/>
+        <img src="https://raw.githubusercontent.com/designgears/bitwarden-secrets-explorer/refs/heads/master/media/screenshots/projects_options.png" alt="Project Options" width="400"/>
         <br/>
         <sub><b>Project Context Menu</b></sub>
       </td>
       <td align="center">
-        <img src="media/screenshots/create_secret.png" alt="Create Secret" width="400"/>
+        <img src="https://raw.githubusercontent.com/designgears/bitwarden-secrets-explorer/refs/heads/master/media/screenshots/create_secret.png" alt="Create Secret" width="400"/>
         <br/>
         <sub><b>Creating Secrets</b></sub>
       </td>
     </tr>
     <tr>
       <td align="center" colspan="2">
-        <img src="media/screenshots/edit_secret.png" alt="Edit Secret" width="400"/>
+        <img src="https://raw.githubusercontent.com/designgears/bitwarden-secrets-explorer/refs/heads/master/media/screenshots/edit_secret.png" alt="Edit Secret" width="400"/>
         <br/>
         <sub><b>Secret Editor</b></sub>
       </td>
