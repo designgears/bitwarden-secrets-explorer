@@ -58,6 +58,14 @@ export class BitwardenWelcomeProvider implements vscode.WebviewViewProvider {
       return;
     }
 
+    // Check if webview is disposed before updating
+    try {
+      this._view.webview;
+    } catch (error) {
+      // Webview is disposed, skip update
+      return;
+    }
+
     const state = await this.checkCurrentState();
     this._view.webview.html = this.getHtmlForWebview(this._view.webview, state);
     
