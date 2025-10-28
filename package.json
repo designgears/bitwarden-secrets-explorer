@@ -2,7 +2,7 @@
   "name": "bitwarden-secrets-explorer",
   "displayName": "Bitwarden Secrets Explorer",
   "description": "Explore Bitwarden Secrets Manager projects and secrets.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "DesignGears",
   "icon": "media/img/logo_128.png",
   "repository": {
