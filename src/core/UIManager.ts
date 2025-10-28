@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { ApplicationState } from './ApplicationState';
-import { BitwardenWelcomeProvider } from '../ui/welcomeprovider';
+import { BitwardenWelcomeProvider } from '../ui/welcomeProvider';
 
 /**
  * Manages UI components and their lifecycle

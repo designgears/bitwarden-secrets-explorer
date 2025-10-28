@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { BitwardenSecretsProvider } from '../ui/treeProvider';
-import { BitwardenWelcomeProvider } from '../ui/welcomeprovider';
+import { BitwardenWelcomeProvider } from '../ui/welcomeProvider';
 
 /**
  * Centralized application state management
