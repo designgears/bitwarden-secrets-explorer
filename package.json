@@ -2,7 +2,7 @@
   "name": "bitwarden-secrets-explorer",
   "displayName": "Bitwarden Secrets Explorer",
   "description": "Explore Bitwarden Secrets Manager projects and secrets.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "DesignGears",
   "icon": "media/img/logo_128.png",
   "repository": {
@@ -10,7 +10,7 @@
     "url": "https://github.com/designgears/bitwarden-secrets-explorer.git"
   },
   "engines": {
-    "vscode": "^1.100.0"
+    "vscode": "^1.90.0"
   },
   "categories": [
     "Other"
@@ -67,7 +67,6 @@
           "when": "view == bitwardenSecretsExplorer && viewItem == project",
           "group": "inline"
         },
-
         {
           "command": "bitwardenSecretsExplorer.copySecret",
           "when": "view == bitwardenSecretsExplorer && viewItem == secret",
@@ -148,7 +147,6 @@
         "title": "Check Status",
         "icon": "$(refresh)"
       },
-     
       {
         "command": "bitwardenSecretsExplorer.refreshEntry",
         "title": "Refresh",
@@ -227,20 +225,29 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "install-platforms": "node scripts/install-all-platforms.js",
+    "package": "npm install && npm run install-platforms && npm run compile && vsce package"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "^24.1.0",
-    "@types/vscode": "^1.100.0",
+    "@types/vscode": "^1.90.0",
     "@typescript-eslint/eslint-plugin": "^8.38.0",
     "@typescript-eslint/parser": "^8.38.0",
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.2.1",
     "eslint": "^9.32.0",
     "typescript": "^5.8.3"
   },
   "dependencies": {
     "@bitwarden/sdk-napi": "^1.0.0"
+  },
+  "optionalDependencies": {
+    "@bitwarden/sdk-napi-darwin-arm64": "^1.0.0",
+    "@bitwarden/sdk-napi-darwin-x64": "^1.0.0",
+    "@bitwarden/sdk-napi-linux-x64-gnu": "^1.0.0",
+    "@bitwarden/sdk-napi-win32-x64-msvc": "^1.0.0"
   }
 }

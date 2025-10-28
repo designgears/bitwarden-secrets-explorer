@@ -1,0 +1,21 @@
+.vscode/**
+.vscode-test/**
+src/**
+.gitignore
+.yarnrc
+vsc-extension-quickstart.md
+**/tsconfig.json
+**/.eslintrc.json
+**/*.map
+**/*.ts
+.git
+.DS_Store
+scripts/**
+
+# Exclude old vsix files but not the current build
+bitwarden-secrets-explorer-*.vsix
+
+# Exclude all node_modules except Bitwarden SDK packages
+node_modules/**
+!node_modules/@bitwarden/**
+
